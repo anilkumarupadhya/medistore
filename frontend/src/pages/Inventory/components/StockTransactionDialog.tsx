@@ -4,13 +4,16 @@ import {
   Button, Grid, TextField, MenuItem, Typography,
   CircularProgress, Alert, Box, Chip, alpha,
 } from '@mui/material';
+import { Add } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useCreateTransaction } from '../../../hooks/useInventory';
 import { useMedicineList } from '../../../hooks/useMedicines';
+import { useQueryClient } from '@tanstack/react-query';
 import type { StockTransactionForm } from '../../../types/inventory';
 import { TX_TYPE_OPTIONS } from '../../../types/inventory';
+import MedicineFormDialog from '../../Medicines/components/MedicineFormDialog';
 
 interface Props {
   open: boolean;
@@ -37,12 +40,14 @@ const EMPTY: StockTransactionForm = {
 
 const StockTransactionDialog: React.FC<Props> = ({ open, onClose, preselectedMedicineId, defaultTxType }) => {
   const mutation = useCreateTransaction();
+  const qc = useQueryClient();
   const [medSearch, setMedSearch] = useState('');
+  const [newMedOpen, setNewMedOpen] = useState(false);
 
   const { data: medData } = useMedicineList({ search: medSearch, page_size: 30, is_active: true });
   const medicines = medData?.results ?? [];
 
-  const { control, handleSubmit, watch, reset, formState: { errors } } = useForm<StockTransactionForm>({
+  const { control, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm<StockTransactionForm>({
     resolver: yupResolver(schema) as any,
     defaultValues: { ...EMPTY, medicine_id: preselectedMedicineId ?? '' },
   });
@@ -69,6 +74,7 @@ const StockTransactionDialog: React.FC<Props> = ({ open, onClose, preselectedMed
   };
 
   return (
+    <>
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
       <DialogTitle sx={{ fontWeight: 700 }}>New Stock Transaction</DialogTitle>
       <DialogContent>
@@ -76,14 +82,22 @@ const StockTransactionDialog: React.FC<Props> = ({ open, onClose, preselectedMed
           <Grid container spacing={2}>
             {/* Medicine search */}
             <Grid item xs={12}>
-              <TextField
-                label="Search Medicine"
-                size="small" fullWidth
-                value={medSearch}
-                onChange={e => setMedSearch(e.target.value)}
-                placeholder="Type to search…"
-                sx={{ mb: 1 }}
-              />
+              <Box display="flex" gap={1} alignItems="center" mb={1}>
+                <TextField
+                  label="Search Medicine"
+                  size="small" sx={{ flex: 1 }}
+                  value={medSearch}
+                  onChange={e => setMedSearch(e.target.value)}
+                  placeholder="Type to search…"
+                />
+                <Button
+                  size="small" variant="outlined" startIcon={<Add />}
+                  onClick={() => setNewMedOpen(true)}
+                  sx={{ whiteSpace: 'nowrap' }}
+                >
+                  New Medicine
+                </Button>
+              </Box>
               <Controller name="medicine_id" control={control} render={({ field }) => (
                 <TextField {...field} select label="Select Medicine" size="small" fullWidth required
                   error={!!errors.medicine_id} helperText={errors.medicine_id?.message}>
@@ -203,6 +217,21 @@ const StockTransactionDialog: React.FC<Props> = ({ open, onClose, preselectedMed
         </Button>
       </DialogActions>
     </Dialog>
+
+    {/* Nested dialog to create a brand-new medicine on-the-fly */}
+    <MedicineFormDialog
+      open={newMedOpen}
+      onClose={() => setNewMedOpen(false)}
+      onCreated={(id) => {
+        // Invalidate medicines cache so the dropdown refreshes
+        qc.invalidateQueries({ queryKey: ['medicines'] });
+        // Auto-select the newly created medicine
+        setValue('medicine_id', id);
+        setMedSearch('');
+        setNewMedOpen(false);
+      }}
+    />
+    </>
   );
 };
 

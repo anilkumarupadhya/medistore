@@ -15,6 +15,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   medicine?: Medicine | null;
+  onCreated?: (id: string) => void;
 }
 
 const schema = yup.object({
@@ -36,7 +37,7 @@ const EMPTY: Partial<MedicineFormValues> = {
   is_prescription: false, is_active: true, notes: '',
 };
 
-const MedicineFormDialog: React.FC<Props> = ({ open, onClose, medicine }) => {
+const MedicineFormDialog: React.FC<Props> = ({ open, onClose, medicine, onCreated }) => {
   const isEdit = !!medicine;
   const createMutation = useCreateMedicine();
   const updateMutation = useUpdateMedicine();
@@ -77,7 +78,10 @@ const MedicineFormDialog: React.FC<Props> = ({ open, onClose, medicine }) => {
       ? updateMutation.mutateAsync({ id: medicine!.id, data: payload })
       : createMutation.mutateAsync(payload);
 
-    promise.then(() => onClose()).catch(() => {});
+    promise.then((result: any) => {
+      if (!isEdit && onCreated && result?.id) onCreated(result.id);
+      onClose();
+    }).catch(() => {});
   };
 
   const F = ({ name, label, type = 'text', required = false, multiline = false, rows = 1, disabled = false }: any) => (

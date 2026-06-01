@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import {
   Box, Typography, Button, Card, Stack, Chip, Tabs, Tab,
-  Grid, TextField, MenuItem, Tooltip, IconButton, alpha,
+  Grid, TextField, Tooltip, IconButton, alpha, Autocomplete,
 } from '@mui/material';
-import { Add, Refresh, TrendingUp, TrendingDown, AddShoppingCart } from '@mui/icons-material';
+import { Add, Refresh, TrendingUp, TrendingDown, AddShoppingCart, History } from '@mui/icons-material';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { useInventoryList, useInventorySummary } from '../../hooks/useInventory';
-import type { InventoryTransaction, TxType } from '../../types/inventory';
+import { useMedicineList } from '../../hooks/useMedicines';
+import type { InventoryTransaction } from '../../types/inventory';
+import type { Medicine } from '../../types/medicine';
 import { TX_TYPE_OPTIONS } from '../../types/inventory';
 import StockTransactionDialog from './components/StockTransactionDialog';
+import MedicineHistoryDialog from './components/MedicineHistoryDialog';
 import { useAuthStore } from '../../store/authStore';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer, Legend } from 'recharts';
 
@@ -28,15 +31,22 @@ const InventoryPage: React.FC = () => {
   const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(1);
   const [tabIndex, setTabIndex] = useState(0);
+  const [medSearch, setMedSearch] = useState('');
+  const [selectedMed, setSelectedMed] = useState<Medicine | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const TAB_TYPES = ['', 'STOCK_IN', 'STOCK_OUT', 'ADJUSTMENT', 'RETURN', 'EXPIRED', 'DAMAGED'];
 
   const activeType = TAB_TYPES[tabIndex] || txTypeFilter;
 
+  const { data: medListData } = useMedicineList({ search: medSearch, page_size: 30, is_active: true });
+  const medicineOptions = medListData?.results ?? [];
+
   const { data, isLoading, refetch } = useInventoryList({
-    tx_type:   activeType || undefined,
-    date_from: dateFrom || undefined,
-    date_to:   dateTo || undefined,
+    tx_type:     activeType || undefined,
+    medicine_id: selectedMed?.id || undefined,
+    date_from:   dateFrom || undefined,
+    date_to:     dateTo || undefined,
     page,
     page_size: 20,
   });
@@ -233,8 +243,32 @@ const InventoryPage: React.FC = () => {
           ))}
         </Tabs>
 
-        {/* Date filter toolbar */}
-        <Stack direction="row" spacing={1.5} p={2} alignItems="center">
+        {/* Filter toolbar */}
+        <Stack direction="row" spacing={1.5} p={2} alignItems="center" flexWrap="wrap">
+          <Autocomplete
+            options={medicineOptions}
+            getOptionLabel={(o) => o.name}
+            value={selectedMed}
+            onChange={(_, v) => { setSelectedMed(v); setPage(1); }}
+            inputValue={medSearch}
+            onInputChange={(_, v) => setMedSearch(v)}
+            size="small"
+            sx={{ width: 260 }}
+            renderInput={(params) => (
+              <TextField {...params} label="Search Medicine" placeholder="Type to filter…" />
+            )}
+            renderOption={(props, o) => (
+              <Box component="li" {...props} key={o.id}>
+                <Box>
+                  <Typography variant="body2" fontWeight={600}>{o.name}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Stock: {o.stock_quantity} {o.unit}
+                    {o.batch_number ? ` · Batch: ${o.batch_number}` : ''}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+          />
           <TextField label="From" type="date" size="small" sx={{ width: 150 }}
             value={dateFrom} onChange={e => setDateFrom(e.target.value)}
             InputLabelProps={{ shrink: true }} />
@@ -248,6 +282,49 @@ const InventoryPage: React.FC = () => {
             {totalCount} records
           </Typography>
         </Stack>
+
+        {/* Selected medicine info card */}
+        {selectedMed && (
+          <Box sx={{ mx: 2, mb: 2, p: 2, borderRadius: 2,
+            background: (t) => alpha(t.palette.primary.main, 0.05),
+            border: '1px solid', borderColor: 'divider',
+            display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap',
+          }}>
+            <Box sx={{ flex: 1, minWidth: 160 }}>
+              <Typography variant="subtitle1" fontWeight={800}>{selectedMed.name}</Typography>
+              {selectedMed.generic_name && (
+                <Typography variant="caption" color="text.secondary">{selectedMed.generic_name}</Typography>
+              )}
+            </Box>
+            {[
+              { label: 'Stock',          value: `${selectedMed.stock_quantity} ${selectedMed.unit}`,
+                color: selectedMed.is_low_stock ? 'error.main' : 'text.primary' },
+              { label: 'Reorder Level',  value: selectedMed.reorder_level },
+              { label: 'Purchase Price', value: `₹${Number(selectedMed.purchase_price).toFixed(2)}` },
+              { label: 'Selling Price',  value: `₹${Number(selectedMed.selling_price).toFixed(2)}` },
+              { label: 'Batch',          value: selectedMed.batch_number || '—' },
+              { label: 'Expiry',         value: selectedMed.expiry_date  || '—' },
+            ].map(({ label, value, color }) => (
+              <Box key={label}>
+                <Typography variant="caption" color="text.secondary">{label}</Typography>
+                <Typography variant="body2" fontWeight={700} color={(color as any) ?? 'text.primary'}>
+                  {value}
+                </Typography>
+              </Box>
+            ))}
+            {selectedMed.is_low_stock && (
+              <Chip label="Low Stock" size="small" color="warning" sx={{ height: 20, fontSize: '0.65rem' }} />
+            )}
+            <Tooltip title="View full history">
+              <Button
+                size="small" variant="outlined" startIcon={<History />}
+                onClick={() => setHistoryOpen(true)}
+              >
+                History
+              </Button>
+            </Tooltip>
+          </Box>
+        )}
 
         <DataGrid
           rows={transactions}
@@ -274,6 +351,12 @@ const InventoryPage: React.FC = () => {
         open={txOpen}
         onClose={() => setTxOpen(false)}
         defaultTxType={txDefaultType}
+      />
+
+      <MedicineHistoryDialog
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        medicine={selectedMed}
       />
     </Box>
   );

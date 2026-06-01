@@ -11,8 +11,9 @@ import { usePurchaseList, usePurchaseSummary, useCancelPurchase } from '../../ho
 import { useSupplierList } from '../../hooks/useSuppliers';
 import type { PurchaseOrder, PurchaseStatus } from '../../types/purchase';
 import { PURCHASE_STATUS_OPTIONS, PAYMENT_STATUS_COLOR } from '../../types/purchase';
-import PurchaseOrderDialog from './components/PurchaseOrderDialog';
-import ReceiveGRNDialog    from './components/ReceiveGRNDialog';
+import PurchaseOrderDialog  from './components/PurchaseOrderDialog';
+import ReceiveGRNDialog     from './components/ReceiveGRNDialog';
+import PurchaseDetailDialog from './components/PurchaseDetailDialog';
 import { useAuthStore } from '../../store/authStore';
 
 const PurchasesPage: React.FC = () => {
@@ -25,6 +26,7 @@ const PurchasesPage: React.FC = () => {
   const [page, setPage]                 = useState(1);
   const [createOpen, setCreateOpen]     = useState(false);
   const [grnPO, setGrnPO]               = useState<PurchaseOrder | null>(null);
+  const [detailId, setDetailId]         = useState<string | null>(null);
 
   const { data, isLoading, refetch } = usePurchaseList({
     status:    statusFilter || undefined,
@@ -47,7 +49,13 @@ const PurchasesPage: React.FC = () => {
     {
       field: 'po_number', headerName: 'PO Number', width: 170,
       renderCell: (p: GridRenderCellParams<PurchaseOrder>) => (
-        <Typography variant="body2" fontWeight={700} color="primary.main">{p.value}</Typography>
+        <Typography
+          variant="body2" fontWeight={700} color="primary.main"
+          sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+          onClick={() => setDetailId(p.row.id)}
+        >
+          {p.value}
+        </Typography>
       ),
     },
     { field: 'supplier_name', headerName: 'Supplier', flex: 1, minWidth: 160,
@@ -207,8 +215,17 @@ const PurchasesPage: React.FC = () => {
         />
       </Card>
 
-      <PurchaseOrderDialog open={createOpen}  onClose={() => setCreateOpen(false)} />
-      <ReceiveGRNDialog    open={!!grnPO}      onClose={() => setGrnPO(null)} purchase={grnPO} />
+      <PurchaseOrderDialog open={createOpen} onClose={() => setCreateOpen(false)} />
+      <ReceiveGRNDialog    open={!!grnPO}    onClose={() => setGrnPO(null)} purchase={grnPO} />
+
+      <PurchaseDetailDialog
+        open={!!detailId}
+        onClose={() => setDetailId(null)}
+        purchaseId={detailId}
+        canWrite={canWrite}
+        onReceive={(po) => setGrnPO(po)}
+        onCancel={(id, poNum) => handleCancel(id, poNum)}
+      />
     </Box>
   );
 };

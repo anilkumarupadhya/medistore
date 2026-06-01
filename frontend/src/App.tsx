@@ -63,6 +63,8 @@ const MedicinesPage    = lazy(() => import('./pages/Medicines/MedicinesPage'));
 const InventoryPage    = lazy(() => import('./pages/Inventory/InventoryPage'));
 const SuppliersPage    = lazy(() => import('./pages/Suppliers/SuppliersPage'));
 const PurchasesPage    = lazy(() => import('./pages/Purchases/PurchasesPage'));
+const CustomersPage    = lazy(() => import('./pages/Customers/CustomersPage'));
+const SalesPage        = lazy(() => import('./pages/Sales/SalesPage'));
 
 const PageLoader = () => (
   <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
@@ -108,8 +110,8 @@ function AppRouterWithTheme({ darkMode, onToggleDarkMode }: AppRouterWithThemePr
             <Route path="inventory"     element={<InventoryPage />} />
             <Route path="purchases"     element={<PurchasesPage />} />
             <Route path="suppliers"     element={<SuppliersPage />} />
-            <Route path="sales"         element={<ComingSoon label="Billing & Sales (POS)" />} />
-            <Route path="customers"     element={<ComingSoon label="Customer Management" />} />
+            <Route path="sales"         element={<SalesPage />} />
+            <Route path="customers"     element={<CustomersPage />} />
             <Route path="prescriptions" element={<ComingSoon label="Prescription Management" />} />
             <Route path="reports"       element={<ComingSoon label="Reports" />} />
             <Route path="users"         element={<PrivateRoute allowedRoles={['ADMIN']}><ComingSoon label="User Management" /></PrivateRoute>} />

@@ -14,7 +14,8 @@ export const medicinesApi = {
     axiosInstance.get<{ success: boolean; data: Medicine }>(`/medicines/${id}/`),
 
   create: (data: Partial<MedicineFormValues>) =>
-    axiosInstance.post<{ success: boolean; data: Medicine }>('/medicines/', data),
+    axiosInstance.post<{ success: boolean; data: Medicine }>('/medicines/', data)
+      .then(r => r.data.data),
 
   update: (id: string, data: Partial<MedicineFormValues>) =>
     axiosInstance.put<{ success: boolean; data: Medicine }>(`/medicines/${id}/`, data),

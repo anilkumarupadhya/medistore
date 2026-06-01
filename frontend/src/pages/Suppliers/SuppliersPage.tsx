@@ -8,6 +8,7 @@ import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { useSupplierList, useDeactivateSupplier } from '../../hooks/useSuppliers';
 import type { Supplier } from '../../types/supplier';
 import SupplierFormDialog from './components/SupplierFormDialog';
+import SupplierDetailDialog from './components/SupplierDetailDialog';
 import { useAuthStore } from '../../store/authStore';
 
 const SuppliersPage: React.FC = () => {
@@ -16,8 +17,9 @@ const SuppliersPage: React.FC = () => {
 
   const [search, setSearch]         = useState('');
   const [page, setPage]             = useState(1);
-  const [formOpen, setFormOpen]     = useState(false);
-  const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
+  const [formOpen, setFormOpen]         = useState(false);
+  const [editSupplier, setEditSupplier]     = useState<Supplier | null>(null);
+  const [detailSupplier, setDetailSupplier] = useState<Supplier | null>(null);
 
   const { data, isLoading, refetch } = useSupplierList({ search: search || undefined, page, page_size: 20 });
   const deactivateMutation = useDeactivateSupplier();
@@ -43,7 +45,13 @@ const SuppliersPage: React.FC = () => {
       field: 'name', headerName: 'Supplier Name', flex: 1.2, minWidth: 180,
       renderCell: (p: GridRenderCellParams<Supplier>) => (
         <Box>
-          <Typography variant="body2" fontWeight={600}>{p.row.name}</Typography>
+          <Typography
+            variant="body2" fontWeight={600}
+            sx={{ cursor: 'pointer', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}
+            onClick={() => setDetailSupplier(p.row)}
+          >
+            {p.row.name}
+          </Typography>
           {p.row.contact_person && (
             <Typography variant="caption" color="text.secondary">{p.row.contact_person}</Typography>
           )}
@@ -153,6 +161,13 @@ const SuppliersPage: React.FC = () => {
       </Card>
 
       <SupplierFormDialog open={formOpen} onClose={handleClose} supplier={editSupplier} />
+
+      <SupplierDetailDialog
+        open={!!detailSupplier}
+        onClose={() => setDetailSupplier(null)}
+        supplier={detailSupplier}
+        onEdit={(s) => { setEditSupplier(s); setFormOpen(true); }}
+      />
     </Box>
   );
 };
