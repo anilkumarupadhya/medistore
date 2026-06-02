@@ -28,6 +28,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useLogout } from '../../hooks/useAuth';
+import { useNotifications } from '../../hooks/useNotifications';
 import { SIDEBAR_WIDTH } from './Sidebar';
 
 interface HeaderProps {
@@ -48,6 +49,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, darkMode, onToggleDarkMod
   const logoutMutation = useLogout();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const { data: notifData } = useNotifications();
+  const notifCount = notifData?.total_count ?? 0;
 
   const handleOpen = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget);
   const handleClose = () => setAnchorEl(null);
@@ -85,8 +88,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, darkMode, onToggleDarkMod
 
         {/* Notifications */}
         <Tooltip title="Notifications">
-          <IconButton>
-            <Badge badgeContent={3} color="error">
+          <IconButton onClick={() => navigate('/notifications')}>
+            <Badge badgeContent={notifCount > 0 ? notifCount : undefined} color="error">
               <NotificationsOutlined />
             </Badge>
           </IconButton>

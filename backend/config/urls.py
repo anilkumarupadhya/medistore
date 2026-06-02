@@ -23,6 +23,7 @@ urlpatterns = [
     path(API_V1 + "customers/", include("apps.customers.urls", namespace="customers")),
     path(API_V1 + "sales/", include("apps.sales.urls", namespace="sales")),
     path(API_V1 + "purchases/", include("apps.purchases.urls", namespace="purchases")),
+    path(API_V1 + "prescriptions/", include("apps.prescriptions.urls", namespace="prescriptions")),
     path(API_V1 + "reports/", include("apps.reports.urls", namespace="reports")),
     path(API_V1 + "notifications/", include("apps.notifications.urls", namespace="notifications")),
     # API Schema & Docs

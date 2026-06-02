@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "apps.customers",
     "apps.sales",
     "apps.purchases",
+    "apps.prescriptions",
     "apps.reports",
     "apps.notifications",
 ]
