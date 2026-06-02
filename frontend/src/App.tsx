@@ -68,6 +68,8 @@ const SalesPage           = lazy(() => import('./pages/Sales/SalesPage'));
 const PrescriptionsPage   = lazy(() => import('./pages/Prescriptions/PrescriptionsPage'));
 const ReportsPage         = lazy(() => import('./pages/Reports/ReportsPage'));
 const NotificationsPage   = lazy(() => import('./pages/Notifications/NotificationsPage'));
+const UsersPage           = lazy(() => import('./pages/Users/UsersPage'));
+const SettingsPage        = lazy(() => import('./pages/Settings/SettingsPage'));
 
 const PageLoader = () => (
   <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
@@ -118,8 +120,8 @@ function AppRouterWithTheme({ darkMode, onToggleDarkMode }: AppRouterWithThemePr
             <Route path="prescriptions" element={<PrescriptionsPage />} />
             <Route path="reports"       element={<ReportsPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
-            <Route path="users"         element={<PrivateRoute allowedRoles={['ADMIN']}><ComingSoon label="User Management" /></PrivateRoute>} />
-            <Route path="settings"      element={<ComingSoon label="Settings" />} />
+            <Route path="users"         element={<PrivateRoute allowedRoles={['ADMIN']}><UsersPage /></PrivateRoute>} />
+            <Route path="settings"      element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
